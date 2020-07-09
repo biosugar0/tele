@@ -106,7 +106,7 @@ func main() {
 	homedir := filepath.Base(os.Getenv("HOME"))
 	rootCmd.PersistentFlags().SortFlags = false
 	rootCmd.PersistentFlags().StringVar(&params.CMD, "run", "echo hello world", "shell command")
-	rootCmd.PersistentFlags().StringVar(&params.ServerPort, "port", "", "http server port")
+	rootCmd.PersistentFlags().StringVar(&params.ServerPort, "port", "", "expose http server port")
 	rootCmd.PersistentFlags().StringVar(&params.User, "user", homedir, "user name for prefix of deployment name. default is home directory name")
 	rootCmd.PersistentFlags().StringVar(&params.NameSpace, "namespace", "default", "name space of kubernetes")
 	rootCmd.Execute()
