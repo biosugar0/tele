@@ -3,19 +3,19 @@ A simple Telepresence wrapper tool for microservice development.
 
 ```
 Usage:
-  tele [flags]
+  tele --run "<shell command>" [flags]
 
 Flags:
       --port string        http server port (default "5004:5004")
       --user string        user name for prefix of deployment name. (default "home directory name")
-      --run string         shell command (default "go run main.go")
+      --run string         shell command (default "echo hello world")
       --namespace string   name space of kubernetes (default "default")
   -h, --help               help for tele
 ```
 
-This command uses the --new-deployment option of telepresense.
+This command uses the --new-deployment option of telepresense, as shown below example.
 
-## example
+## tele uses the --new-deployment
 
 ```
  telepresence --namespace {--namespace} --method inject-tcp --new-deployment {--user}-{repository}-{branch} --expose {--port} --run bash -c "{--run}"
