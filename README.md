@@ -6,7 +6,7 @@ Usage:
   tele --run "<shell command>" [flags]
 
 Flags:
-      --port string        http server port (default "5004:5004")
+      --port string        expose http server port
       --user string        user name for prefix of deployment name. (default "home directory name")
       --run string         shell command (default "echo hello world")
       --namespace string   name space of kubernetes (default "default")
