@@ -24,5 +24,8 @@ func ToValidName(name string) string {
 	}
 
 	name = delimiterRx.ReplaceAllString(name, "-")
+	if strings.HasSuffix(name, "-") {
+		name = name[:len(name)-1]
+	}
 	return name
 }
