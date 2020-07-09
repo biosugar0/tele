@@ -78,10 +78,15 @@ func Run(cmd *cobra.Command, args []string) error {
 	fmt.Printf("[request command]:\n %s\n", run)
 
 	telepresence := fmt.Sprintf(
-		"telepresence --namespace %s --method inject-tcp --new-deployment %s --expose %s --run bash -c \"%s\"",
+		"telepresence --namespace %s --method inject-tcp --new-deployment %s",
 		namespace,
 		deployment,
-		port,
+	)
+	if len(port) > 0 {
+		telepresence += fmt.Sprintf(" --expose %s", port)
+	}
+	telepresence += fmt.Sprintf(
+		" --run bash -c \"%s\"",
 		run,
 	)
 
@@ -101,7 +106,7 @@ func main() {
 	homedir := filepath.Base(os.Getenv("HOME"))
 	rootCmd.PersistentFlags().SortFlags = false
 	rootCmd.PersistentFlags().StringVar(&params.CMD, "run", "echo hello world", "shell command")
-	rootCmd.PersistentFlags().StringVar(&params.ServerPort, "port", "5004:5004", "http server port")
+	rootCmd.PersistentFlags().StringVar(&params.ServerPort, "port", "", "http server port")
 	rootCmd.PersistentFlags().StringVar(&params.User, "user", homedir, "user name for prefix of deployment name. default is home directory name")
 	rootCmd.PersistentFlags().StringVar(&params.NameSpace, "namespace", "default", "name space of kubernetes")
 	rootCmd.Execute()
