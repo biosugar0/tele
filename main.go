@@ -16,14 +16,11 @@ import (
 
 var (
 	rootCmd = &cobra.Command{
-		Use:   "tele",
+		Use:   `tele --run "<shell command>"`,
 		Short: "simple Telepresence wrapper tool for development microservices",
-		Long: `tele
- A simple Telepresence wrapper tool for microservice development.
- This command uses the --new-deployment option of telepresense, as shown below example.
+		Long: `A simple Telepresence wrapper tool for microservice development.
 
-[example]
- telepresence --namespace {--namespace} --method inject-tcp --new-deployment {--user}-{repository}-{branch} --expose {--port} --run bash -c "{--run}"
+ Find more information at: https://github.com/biosugar0/tele
 `,
 		RunE: Run,
 	}
@@ -102,10 +99,10 @@ func Run(cmd *cobra.Command, args []string) error {
 
 func main() {
 	homedir := filepath.Base(os.Getenv("HOME"))
-	rootCmd.Flags().SortFlags = false
-	rootCmd.Flags().StringVar(&params.ServerPort, "port", "5004:5004", "http server port")
-	rootCmd.Flags().StringVar(&params.User, "user", homedir, "user name for prefix of deployment name. default is home directory name")
-	rootCmd.Flags().StringVar(&params.CMD, "run", "go run main.go", "shell command")
-	rootCmd.Flags().StringVar(&params.NameSpace, "namespace", "default", "name space of kubernetes")
+	rootCmd.PersistentFlags().SortFlags = false
+	rootCmd.PersistentFlags().StringVar(&params.CMD, "run", "echo hello world", "shell command")
+	rootCmd.PersistentFlags().StringVar(&params.ServerPort, "port", "5004:5004", "http server port")
+	rootCmd.PersistentFlags().StringVar(&params.User, "user", homedir, "user name for prefix of deployment name. default is home directory name")
+	rootCmd.PersistentFlags().StringVar(&params.NameSpace, "namespace", "default", "name space of kubernetes")
 	rootCmd.Execute()
 }
