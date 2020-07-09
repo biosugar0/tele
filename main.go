@@ -23,7 +23,7 @@ var (
  This command uses the --new-deployment option of telepresense, as shown below example.
 
 [example]
- telepresence --namespace {--namespace} --method inject-tcp --new-deployment {--user}-{repository}-{branch} --expose {--port} --run bash -c \"{--run}\"
+ telepresence --namespace {--namespace} --method inject-tcp --new-deployment {--user}-{repository}-{branch} --expose {--port} --run bash -c "{--run}"
 `,
 		RunE: Run,
 	}

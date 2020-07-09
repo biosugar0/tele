@@ -1,11 +1,5 @@
 # tele
 A simple Telepresence wrapper tool for microservice development.
-This command uses the --new-deployment option of telepresense.
-
-[example]
-```
- telepresence --namespace {--namespace} --method inject-tcp --new-deployment {--user}-{repository}-{branch} --expose {--port} --run bash -c \"{--run}\"
-```
 
 ```
 Usage:
@@ -18,6 +12,13 @@ Flags:
       --namespace string   name space of kubernetes (default "default")
   -h, --help               help for tele
 ```
+
+This command uses the --new-deployment option of telepresense.
+[example]
+```
+ telepresence --namespace {--namespace} --method inject-tcp --new-deployment {--user}-{repository}-{branch} --expose {--port} --run bash -c "{--run}"
+```
+
 
 
 ## Requirement
