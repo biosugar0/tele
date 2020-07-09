@@ -19,7 +19,7 @@ var (
 		Use:   "version",
 		Short: "Print the version number of tele",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Printf("tele v%s", params.Version)
+			fmt.Printf("tele version %s\n", params.Version)
 		},
 	}
 
