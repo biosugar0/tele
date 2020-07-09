@@ -6,7 +6,7 @@ import (
 )
 
 const dns1123LabelFmt string = "[a-z0-9]([-a-z0-9]*[a-z0-9])?"
-const delimiter string = "-.*"
+const delimiter string = "-+"
 
 var delimiterRx = regexp.MustCompile(delimiter)
 var dns1123LabelRx = regexp.MustCompile(dns1123LabelFmt)
