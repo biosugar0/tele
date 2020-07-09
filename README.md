@@ -14,7 +14,9 @@ Flags:
 ```
 
 This command uses the --new-deployment option of telepresense.
-[example]
+
+## example
+
 ```
  telepresence --namespace {--namespace} --method inject-tcp --new-deployment {--user}-{repository}-{branch} --expose {--port} --run bash -c "{--run}"
 ```
