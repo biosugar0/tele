@@ -48,22 +48,22 @@ func Run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	repo := filepath.Base(repository)
-	fmt.Printf("[repository]:\n %s\n", repo)
+	cmd.Printf("[repository]:\n %s\n", repo)
 
 	branch, err := execute(`git rev-parse --abbrev-ref @`)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("[branch]:\n %s\n", branch)
+	cmd.Printf("[branch]:\n %s\n", branch)
 
 	user := params.User
-	fmt.Printf("[user]:\n %s\n", user)
+	cmd.Printf("[user]:\n %s\n", user)
 
 	namespace := params.NameSpace
-	fmt.Printf("[namespace]:\n %s\n", namespace)
+	cmd.Printf("[namespace]:\n %s\n", namespace)
 
 	port := params.ServerPort
-	fmt.Printf("[port]:\n %s\n", port)
+	cmd.Printf("[port]:\n %s\n", port)
 
 	deployment := strings.Join([]string{
 		user,
@@ -72,11 +72,11 @@ func Run(cmd *cobra.Command, args []string) error {
 	}, "-")
 	deployment = util.ToValidName(deployment)
 
-	fmt.Printf("[deployment]:\n %s\n", deployment)
+	cmd.Printf("[deployment]:\n %s\n", deployment)
 
 	run := params.CMD
 
-	fmt.Printf("[request command]:\n %s\n", run)
+	cmd.Printf("[request command]:\n %s\n", run)
 
 	telepresence := fmt.Sprintf(
 		"telepresence --namespace %s --method inject-tcp --new-deployment %s",
@@ -91,9 +91,9 @@ func Run(cmd *cobra.Command, args []string) error {
 		run,
 	)
 
-	fmt.Printf("[Telepreesence command]:\n %s\n", telepresence)
+	cmd.Printf("[Telepreesence command]:\n %s\n", telepresence)
 
-	fmt.Printf("[result]:\n ")
+	cmd.Printf("[result]:\n ")
 	result, err := execute(telepresence)
 	if err != nil {
 		return err
@@ -110,5 +110,10 @@ func main() {
 	rootCmd.PersistentFlags().StringVar(&params.ServerPort, "port", "", "expose http server port")
 	rootCmd.PersistentFlags().StringVar(&params.User, "user", homedir, "user name for prefix of deployment name. default is home directory name")
 	rootCmd.PersistentFlags().StringVar(&params.NameSpace, "namespace", "default", "name space of kubernetes")
-	rootCmd.Execute()
+	rootCmd.SetOutput(os.Stdout)
+	if err := rootCmd.Execute(); err != nil {
+		rootCmd.SetOutput(os.Stderr)
+		rootCmd.Println(err)
+		os.Exit(1)
+	}
 }
