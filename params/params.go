@@ -7,4 +7,5 @@ var (
 	ServerPort string
 	DryRun     bool
 	CMD        string
+	NameSpace  string
 )

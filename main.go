@@ -18,8 +18,14 @@ var (
 	rootCmd = &cobra.Command{
 		Use:   "tele",
 		Short: "simple Telepresence wrapper tool for development microservices",
-		Long:  `simple Telepresence wrapper tool for development microservices`,
-		RunE:  Run,
+		Long: `tele
+ A simple Telepresence wrapper tool for microservice development.
+ This command uses the --new-deployment option of telepresense, as shown below example.
+
+[example]
+ telepresence --namespace {--namespace} --method inject-tcp --new-deployment {--user}-{repository}-{branch} --expose {--port} --run bash -c \"{--run}\"
+`,
+		RunE: Run,
 	}
 )
 
@@ -44,18 +50,22 @@ func Run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	repo := filepath.Base(repository)
-	fmt.Println("repository =", repo)
+	fmt.Printf("[repository]:\n %s\n", repo)
 
 	branch, err := execute(`git rev-parse --abbrev-ref @`)
 	if err != nil {
 		return err
 	}
-	fmt.Println("branch = ", branch)
+	fmt.Printf("[branch]:\n %s\n", branch)
 
 	user := params.User
-	fmt.Println("user = ", user)
+	fmt.Printf("[user]:\n %s\n", user)
+
+	namespace := params.NameSpace
+	fmt.Printf("[namespace]:\n %s\n", namespace)
 
 	port := params.ServerPort
+	fmt.Printf("[port]:\n %s\n", port)
 
 	deployment := strings.Join([]string{
 		user,
@@ -64,24 +74,23 @@ func Run(cmd *cobra.Command, args []string) error {
 	}, "-")
 	deployment = util.ToValidName(deployment)
 
-	fmt.Println(deployment)
+	fmt.Printf("[deployment]:\n %s\n", deployment)
 
 	run := params.CMD
 
-	fmt.Println(run)
+	fmt.Printf("[request command]:\n %s\n", run)
 
 	telepresence := fmt.Sprintf(
-		"telepresence --namespace default --method inject-tcp --new-deployment %s --expose %s:%s --run bash -c \"%s\"",
+		"telepresence --namespace %s --method inject-tcp --new-deployment %s --expose %s --run bash -c \"%s\"",
+		namespace,
 		deployment,
-		port,
 		port,
 		run,
 	)
 
-	fmt.Println("==============")
-	fmt.Println(telepresence)
-	fmt.Println("==============")
+	fmt.Printf("[Telepreesence command]:\n %s\n", telepresence)
 
+	fmt.Printf("[result]:\n ")
 	result, err := execute(telepresence)
 	if err != nil {
 		return err
@@ -94,8 +103,9 @@ func Run(cmd *cobra.Command, args []string) error {
 func main() {
 	homedir := filepath.Base(os.Getenv("HOME"))
 	rootCmd.Flags().SortFlags = false
-	rootCmd.Flags().StringVar(&params.ServerPort, "port", "5000", "http server port")
-	rootCmd.Flags().StringVar(&params.User, "user", homedir, "user name")
+	rootCmd.Flags().StringVar(&params.ServerPort, "port", "5004:5004", "http server port")
+	rootCmd.Flags().StringVar(&params.User, "user", homedir, "user name for prefix of deployment name. default is home directory name")
 	rootCmd.Flags().StringVar(&params.CMD, "run", "go run main.go", "shell command")
+	rootCmd.Flags().StringVar(&params.NameSpace, "namespace", "default", "name space of kubernetes")
 	rootCmd.Execute()
 }
