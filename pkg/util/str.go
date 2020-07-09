@@ -14,6 +14,7 @@ var dns1123LabelRx = regexp.MustCompile(dns1123LabelFmt)
 const telepresenceMaxLength int = 57
 
 func ToValidName(name string) string {
+	name = strings.ToLower(name)
 	invalidString := dns1123LabelRx.ReplaceAllString(name, "")
 	invalidChar := strings.Split(invalidString, "")
 	for _, i := range invalidChar {
