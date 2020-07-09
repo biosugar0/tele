@@ -15,6 +15,14 @@ import (
 )
 
 var (
+	versionCmd = &cobra.Command{
+		Use:   "version",
+		Short: "Print the version number of tele",
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Printf("tele v%s", params.Version)
+		},
+	}
+
 	rootCmd = &cobra.Command{
 		Version: params.Version,
 		Use:     `tele --run "<shell command>"`,
@@ -26,6 +34,11 @@ var (
 		RunE: Run,
 	}
 )
+
+func init() {
+	rootCmd.AddCommand(versionCmd)
+	rootCmd.SetOutput(os.Stdout)
+}
 
 func execute(cmdstr string) (string, error) {
 	cmd := exec.Command("bash", "-c", cmdstr)
@@ -110,7 +123,6 @@ func main() {
 	rootCmd.PersistentFlags().StringVar(&params.ServerPort, "port", "", "expose http server port")
 	rootCmd.PersistentFlags().StringVar(&params.User, "user", homedir, "user name for prefix of deployment name. default is home directory name")
 	rootCmd.PersistentFlags().StringVar(&params.NameSpace, "namespace", "default", "name space of kubernetes")
-	rootCmd.SetOutput(os.Stdout)
 	if err := rootCmd.Execute(); err != nil {
 		rootCmd.SetOutput(os.Stderr)
 		rootCmd.Println(err)
