@@ -16,8 +16,9 @@ import (
 
 var (
 	rootCmd = &cobra.Command{
-		Use:   `tele --run "<shell command>"`,
-		Short: "simple Telepresence wrapper tool for development microservices",
+		Version: params.Version,
+		Use:     `tele --run "<shell command>"`,
+		Short:   "simple Telepresence wrapper tool for development microservices",
 		Long: `A simple Telepresence wrapper tool for microservice development.
 
  Find more information at: https://github.com/biosugar0/tele
