@@ -3,7 +3,10 @@ A simple Telepresence wrapper tool for microservice development.
 
 ```
 Usage:
-  tele <shell command> [flags]
+  tele [flags] <shell command>
+
+Examples:
+tele --port 8080:8080 go run main.go
 
 Flags:
   -h, --help               help for tele

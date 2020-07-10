@@ -17,6 +17,7 @@ import (
 
 var (
 	rootCmd = &cobra.Command{
+		Example:               "tele --port 8080:8080 go run main.go",
 		DisableFlagsInUseLine: true,
 		Version:               params.Version,
 		Use:                   `tele [flags] <shell command>`,
