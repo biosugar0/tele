@@ -17,9 +17,10 @@ import (
 
 var (
 	rootCmd = &cobra.Command{
-		Version: params.Version,
-		Use:     `tele <shell command>`,
-		Short:   "simple Telepresence wrapper tool for development microservices",
+		DisableFlagsInUseLine: true,
+		Version:               params.Version,
+		Use:                   `tele [flags] <shell command>`,
+		Short:                 "simple Telepresence wrapper tool for development microservices",
 		Long: `A simple Telepresence wrapper tool for microservice development.
 
  Find more information at: https://github.com/biosugar0/tele
@@ -27,9 +28,6 @@ var (
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) < 1 {
 				return errors.New("requires a command string. example: tele go run main.go")
-			}
-			if len(args[1:]) == 0 {
-				return fmt.Errorf("invalid command string: %s", args[0])
 			}
 			return nil
 		},
@@ -172,6 +170,7 @@ func Run(cmd *cobra.Command, args []string) error {
 
 func main() {
 	homedir := filepath.Base(os.Getenv("HOME"))
+	rootCmd.Flags().SetInterspersed(false)
 	rootCmd.PersistentFlags().SortFlags = false
 	rootCmd.PersistentFlags().StringVar(&params.ServerPort, "port", "", "expose http server port")
 	rootCmd.PersistentFlags().StringVar(&params.User, "user", homedir, "user name for prefix of deployment name. default is home directory name")
