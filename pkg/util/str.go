@@ -1,6 +1,7 @@
 package util
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 )
@@ -10,6 +11,10 @@ const delimiter string = "-+"
 
 var delimiterRx = regexp.MustCompile(delimiter)
 var dns1123LabelRx = regexp.MustCompile(dns1123LabelFmt)
+
+const specialChar string = "]^\\\\[.()-"
+
+var specialStrRx = regexp.MustCompile("[" + specialChar + "]")
 
 const telepresenceMaxLength int = 57
 
@@ -21,12 +26,18 @@ func ToValidName(name string) string {
 		name = strings.Replace(name, i, "-", -1)
 	}
 	if len(name) > telepresenceMaxLength {
-		return name[:57]
+		name = name[:57]
 	}
-
 	name = delimiterRx.ReplaceAllString(name, "-")
 	if strings.HasSuffix(name, "-") {
 		name = name[:len(name)-1]
 	}
 	return name
+}
+
+func SpecialStr(s string) string {
+	if specialStrRx.Match([]byte(s)) {
+		return fmt.Sprintf("'%s'", s)
+	}
+	return s
 }

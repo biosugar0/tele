@@ -12,6 +12,7 @@ import (
 
 	"github.com/biosugar0/tele/params"
 	"github.com/biosugar0/tele/pkg/util"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/spf13/cobra"
 )
 
@@ -142,7 +143,14 @@ func Run(cmd *cobra.Command, args []string) error {
 
 	cmd.Printf("[deployment]:\n %s\n", deployment)
 
-	run := strings.Join(args, " ")
+	cmdArgs := []string{}
+	for _, v := range args {
+		v := util.SpecialStr(v)
+		cmdArgs = append(cmdArgs, v)
+	}
+
+	spew.Dump(cmdArgs)
+	run := strings.Join(cmdArgs, " ")
 
 	cmd.Printf("[request command]:\n %s\n", run)
 
