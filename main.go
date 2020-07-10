@@ -16,28 +16,28 @@ import (
 )
 
 var (
-	versionCmd = &cobra.Command{
-		Use:   "version",
-		Short: "Print the version number of tele",
-		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Printf("tele version %s\n", params.Version)
-		},
-	}
-
 	rootCmd = &cobra.Command{
 		Version: params.Version,
-		Use:     `tele --run "<shell command>"`,
+		Use:     `tele <shell command>`,
 		Short:   "simple Telepresence wrapper tool for development microservices",
 		Long: `A simple Telepresence wrapper tool for microservice development.
 
  Find more information at: https://github.com/biosugar0/tele
 `,
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) < 1 {
+				return errors.New("requires a command string. example: tele go run main.go")
+			}
+			if len(args[1:]) == 0 {
+				return fmt.Errorf("invalid command string: %s", args[0])
+			}
+			return nil
+		},
 		RunE: Run,
 	}
 )
 
 func init() {
-	rootCmd.AddCommand(versionCmd)
 	rootCmd.SetOutput(os.Stdout)
 }
 
@@ -142,7 +142,7 @@ func Run(cmd *cobra.Command, args []string) error {
 
 	cmd.Printf("[deployment]:\n %s\n", deployment)
 
-	run := params.CMD
+	run := strings.Join(args, " ")
 
 	cmd.Printf("[request command]:\n %s\n", run)
 
@@ -173,7 +173,6 @@ func Run(cmd *cobra.Command, args []string) error {
 func main() {
 	homedir := filepath.Base(os.Getenv("HOME"))
 	rootCmd.PersistentFlags().SortFlags = false
-	rootCmd.PersistentFlags().StringVar(&params.CMD, "run", "echo hello world", "shell command")
 	rootCmd.PersistentFlags().StringVar(&params.ServerPort, "port", "", "expose http server port")
 	rootCmd.PersistentFlags().StringVar(&params.User, "user", homedir, "user name for prefix of deployment name. default is home directory name")
 	rootCmd.PersistentFlags().StringVar(&params.NameSpace, "namespace", "default", "name space of kubernetes")
