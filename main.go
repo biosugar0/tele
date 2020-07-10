@@ -57,6 +57,7 @@ func execute(cmdstr string) (string, error) {
 
 func executeStream(cmdstr string) error {
 	cmd := exec.Command("bash", "-c", cmdstr)
+	cmd.Env = os.Environ()
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
