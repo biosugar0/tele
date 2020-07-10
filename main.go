@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"errors"
 	"fmt"
@@ -55,6 +56,60 @@ func execute(cmdstr string) (string, error) {
 	return result, nil
 }
 
+func executeStream(cmdstr string) error {
+	cmd := exec.Command("bash", "-c", cmdstr)
+
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return err
+	}
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return err
+	}
+
+	err = cmd.Start()
+	if err != nil {
+		return err
+	}
+	streamReader := func(scanner *bufio.Scanner, output chan string, done chan bool) {
+		defer close(output)
+		defer close(done)
+		for scanner.Scan() {
+			output <- scanner.Text()
+		}
+		done <- true
+	}
+
+	stdoutScanner := bufio.NewScanner(stdout)
+	stdoutOutputChan := make(chan string)
+	stdoutDoneChan := make(chan bool)
+	stderrScanner := bufio.NewScanner(stderr)
+	stderrOutputChan := make(chan string)
+	stderrDoneChan := make(chan bool)
+	go streamReader(stdoutScanner, stdoutOutputChan, stdoutDoneChan)
+	go streamReader(stderrScanner, stderrOutputChan, stderrDoneChan)
+
+	runnning := true
+	for runnning {
+		select {
+		case <-stdoutDoneChan:
+			runnning = false
+		case line := <-stdoutOutputChan:
+			fmt.Println(line)
+		case line := <-stderrOutputChan:
+			fmt.Println(line)
+		}
+	}
+
+	err = cmd.Wait()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func Run(cmd *cobra.Command, args []string) error {
 	repository, err := execute("git rev-parse --show-toplevel")
 	if err != nil {
@@ -106,12 +161,11 @@ func Run(cmd *cobra.Command, args []string) error {
 
 	cmd.Printf("[Telepreesence command]:\n %s\n", telepresence)
 
-	cmd.Printf("[result]:\n ")
-	result, err := execute(telepresence)
+	cmd.Printf("[result]:\n")
+	err = executeStream(telepresence)
 	if err != nil {
 		return err
 	}
-	fmt.Println(result)
 
 	return nil
 }
