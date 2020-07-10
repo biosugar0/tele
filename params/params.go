@@ -7,4 +7,5 @@ var (
 	ServerPort string
 	DryRun     bool
 	NameSpace  string
+	Sudo       bool
 )

@@ -158,6 +158,10 @@ func Run(cmd *cobra.Command, args []string) error {
 		run,
 	)
 
+	if params.Sudo {
+		telepresence = fmt.Sprintf("sudo %s", telepresence)
+	}
+
 	cmd.Printf("[Telepreesence command]:\n %s\n", telepresence)
 
 	cmd.Printf("[result]:\n")
@@ -176,6 +180,7 @@ func main() {
 	rootCmd.PersistentFlags().StringVar(&params.ServerPort, "port", "", "expose http server port")
 	rootCmd.PersistentFlags().StringVar(&params.User, "user", homedir, "user name for prefix of deployment name. default is home directory name")
 	rootCmd.PersistentFlags().StringVar(&params.NameSpace, "namespace", "default", "name space of kubernetes")
+	rootCmd.PersistentFlags().BoolVar(&params.Sudo, "sudo", false, "execute commands as a super user")
 	if err := rootCmd.Execute(); err != nil {
 		rootCmd.SetOutput(os.Stderr)
 		rootCmd.Println(err)

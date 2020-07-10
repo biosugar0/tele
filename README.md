@@ -12,6 +12,7 @@ Flags:
   -h, --help               help for tele
       --namespace string   name space of kubernetes (default "default")
       --port string        expose http server port
+      --sudo               execute commands as a super user
       --user string        user name for prefix of deployment name. (default "home directory name")
   -v, --version            version for tele
 ```
