@@ -1,6 +1,6 @@
 package params
 
-var Version = "0.1.5"
+var Version = "0.2.0"
 
 var (
 	User       string
