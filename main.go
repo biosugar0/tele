@@ -7,8 +7,10 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
 
 	"github.com/biosugar0/tele/params"
 	"github.com/biosugar0/tele/pkg/util"
@@ -36,6 +38,18 @@ var (
 	}
 )
 
+type Resource struct {
+	NameSpace  string
+	Deployment *string
+}
+
+var (
+	resourceStore = Resource{}
+)
+
+var stopSignalReceived = make(chan bool, 1)
+var completeCommand = make(chan bool, 1)
+
 func init() {
 	rootCmd.SetOutput(os.Stdout)
 }
@@ -57,6 +71,9 @@ func execute(cmdstr string) (string, error) {
 
 func executeStream(cmdstr string) error {
 	cmd := exec.Command("bash", "-c", cmdstr)
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Setpgid: true,
+	}
 	cmd.Env = os.Environ()
 
 	stdout, err := cmd.StdoutPipe()
@@ -90,19 +107,49 @@ func executeStream(cmdstr string) error {
 	go streamReader(stdoutScanner, stdoutOutputChan, stdoutDoneChan)
 	go streamReader(stderrScanner, stderrOutputChan, stderrDoneChan)
 
-	runnning := true
-	for runnning {
-		select {
-		case <-stdoutDoneChan:
-			runnning = false
-		case line := <-stdoutOutputChan:
-			fmt.Println(line)
-		case line := <-stderrOutputChan:
-			fmt.Println(line)
+	go func() {
+		for range stopSignalReceived {
+			if cmd.ProcessState == nil || !cmd.ProcessState.Exited() {
+				fmt.Println("\n[tele]: shut down command")
+				if e := cmd.Process.Signal(os.Interrupt); e != nil {
+					fmt.Printf("err: %s", e)
+					err = e
+				}
+			}
+			completeCommand <- false
 		}
+	}()
+
+	go func() {
+		for {
+			if cmd.ProcessState != nil {
+				if cmd.ProcessState.Exited() {
+					completeCommand <- true
+					return
+				}
+			}
+		}
+	}()
+
+	go func() {
+		runnning := true
+		for runnning {
+			select {
+			case <-stdoutDoneChan:
+				runnning = false
+			case line := <-stdoutOutputChan:
+				fmt.Println(line)
+			case line := <-stderrOutputChan:
+				fmt.Println(line)
+			}
+		}
+	}()
+
+	if e := cmd.Wait(); e != nil {
+		fmt.Printf("err: %s", e)
+		err = e
 	}
 
-	err = cmd.Wait()
 	if err != nil {
 		return err
 	}
@@ -157,6 +204,8 @@ func Run(cmd *cobra.Command, args []string) error {
 		namespace,
 		deployment,
 	)
+	resourceStore.Deployment = &deployment
+	resourceStore.NameSpace = namespace
 	if len(port) > 0 {
 		telepresence += fmt.Sprintf(" --expose %s", port)
 	}
@@ -180,6 +229,10 @@ func Run(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+func cleanup(resource Resource) {
+	// TODO
+}
+
 func main() {
 	homedir := filepath.Base(os.Getenv("HOME"))
 	rootCmd.Flags().SetInterspersed(false)
@@ -188,9 +241,28 @@ func main() {
 	rootCmd.PersistentFlags().StringVar(&params.User, "user", homedir, "user name for prefix of deployment name. default is home directory name")
 	rootCmd.PersistentFlags().StringVar(&params.NameSpace, "namespace", "default", "name space of kubernetes")
 	rootCmd.PersistentFlags().BoolVar(&params.Sudo, "sudo", false, "execute commands as a super user")
+
+	go func() {
+		quit := make(chan os.Signal, 1)
+		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+		<-quit
+		stopSignalReceived <- true
+	}()
+
 	if err := rootCmd.Execute(); err != nil {
 		rootCmd.SetOutput(os.Stderr)
 		rootCmd.Println(err)
 		os.Exit(1)
+	}
+
+	complete := <-completeCommand
+
+	cleanup(resourceStore)
+
+	switch complete {
+	case true:
+		fmt.Println("\n[tele]: complete")
+	default:
+		fmt.Println("\n[tele]: command killed")
 	}
 }
