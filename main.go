@@ -3,7 +3,9 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"errors"
+	"flag"
 	"fmt"
 	"os"
 	"os/exec"
@@ -11,10 +13,23 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
+	"time"
+
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 
 	"github.com/biosugar0/tele/params"
 	"github.com/biosugar0/tele/pkg/util"
 	"github.com/spf13/cobra"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/homedir"
+)
+
+const (
+	// PodTerminating means that the pod is being terminated by the system.
+	PodTerminating v1.PodPhase = "Terminating"
 )
 
 var (
@@ -37,6 +52,12 @@ var (
 		RunE: Run,
 	}
 )
+
+type k8sClient struct {
+	Client       *kubernetes.Clientset
+	ResourceName *string
+	NameSpace    string
+}
 
 type Resource struct {
 	NameSpace  string
@@ -226,11 +247,161 @@ func Run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	complete := <-completeCommand
+
+	cleanup(resourceStore)
+
+	switch complete {
+	case true:
+		fmt.Println("\n[tele]: complete")
+	default:
+		fmt.Println("\n[tele]: command killed")
+	}
+
+	return nil
+}
+
+func newClient(name *string) k8sClient {
+	var kubeconfig *string
+	if home := homedir.HomeDir(); home != "" {
+		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+	} else {
+		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
+	}
+	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	return k8sClient{
+		Client:       clientset,
+		ResourceName: name,
+		NameSpace:    params.NameSpace,
+	}
+}
+
+func (r *k8sClient) cleanService() error {
+	if r.ResourceName == nil {
+		return nil
+	}
+	service, err := r.Client.CoreV1().Services(r.NameSpace).Get(context.TODO(), *r.ResourceName, metav1.GetOptions{})
+	if err != nil {
+		if k8sErrors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+	if service != nil {
+		err = r.Client.CoreV1().Services(r.NameSpace).Delete(context.TODO(), *r.ResourceName, metav1.DeleteOptions{})
+		if err != nil {
+			return err
+		}
+		fmt.Println("service has been deleted")
+	}
+
+	return nil
+}
+
+func (r *k8sClient) podPhase() *v1.PodPhase {
+	pod, err := r.Client.CoreV1().Pods(r.NameSpace).Get(context.TODO(), *r.ResourceName, metav1.GetOptions{})
+	if err != nil {
+		if k8sErrors.IsNotFound(err) {
+			return nil
+		}
+		fmt.Println(err.Error())
+		return nil
+	}
+	if pod != nil {
+		st := pod.Status
+		if pod.ObjectMeta.DeletionTimestamp != nil {
+			v := PodTerminating
+			return &v
+		}
+		return &st.Phase
+	}
+	fmt.Printf("%v:%v", pod.Name, pod.Status.Phase)
+
+	return nil
+}
+
+func (r *k8sClient) cleanPod() error {
+	time.Sleep(1 * time.Second)
+	pods, err := r.Client.CoreV1().Pods(r.NameSpace).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	if pods != nil {
+		podlist := *pods
+		terminating := 0
+		for _, v := range podlist.Items {
+			if v.Name == *r.ResourceName {
+				runningTime := 0
+
+				for {
+					finish := false
+
+					time.Sleep(1 * time.Second)
+
+					runningTime++
+					switch phase := r.podPhase(); {
+					case phase == nil:
+						fmt.Println("pod has been terminated")
+						finish = true
+					case *phase == PodTerminating:
+						terminating++
+						if terminating == 1 {
+							fmt.Println("waiting treminate pod...")
+						}
+					case *phase == v1.PodPending:
+						err = r.Client.CoreV1().Pods(r.NameSpace).Delete(context.TODO(), *r.ResourceName, metav1.DeleteOptions{})
+						if err != nil {
+							fmt.Println(err.Error())
+						}
+						finish = true
+					case *phase == v1.PodRunning:
+						if runningTime > 3 {
+							err = r.Client.CoreV1().Pods(r.NameSpace).Delete(context.TODO(), *r.ResourceName, metav1.DeleteOptions{})
+							if err != nil {
+								fmt.Println(err.Error())
+							}
+						}
+					default:
+						finish = true
+					}
+
+					if finish {
+						break
+					}
+				}
+
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
 	return nil
 }
 
 func cleanup(resource Resource) {
-	// TODO
+	fmt.Println("tele resource clening")
+	client := newClient(resource.Deployment)
+
+	if resource.Deployment != nil {
+		err := client.cleanPod()
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+		err = client.cleanService()
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+	}
 }
 
 func main() {
@@ -255,14 +426,4 @@ func main() {
 		os.Exit(1)
 	}
 
-	complete := <-completeCommand
-
-	cleanup(resourceStore)
-
-	switch complete {
-	case true:
-		fmt.Println("\n[tele]: complete")
-	default:
-		fmt.Println("\n[tele]: command killed")
-	}
 }
