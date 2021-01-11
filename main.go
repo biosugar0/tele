@@ -293,13 +293,12 @@ func (r *k8sClient) cleanService() error {
 		if k8sErrors.IsNotFound(err) {
 			return nil
 		}
-		fmt.Println(err.Error())
-		return nil
+		return err
 	}
 	if service != nil {
 		err = r.Client.CoreV1().Services(r.NameSpace).Delete(context.TODO(), *r.ResourceName, metav1.DeleteOptions{})
 		if err != nil {
-			fmt.Println(err.Error())
+			return err
 		}
 		fmt.Println("service has been deleted")
 	}
