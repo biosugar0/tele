@@ -20,7 +20,7 @@ Flags:
 ## Installation
 
 ```
- go get -u github.com/biosugar0/tele
+ go install github.com/biosugar0/tele
 ```
 
 This command uses the --new-deployment option of telepresense, as shown below example.
