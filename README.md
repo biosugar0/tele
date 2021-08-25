@@ -1,5 +1,8 @@
 # tele
-A simple Telepresence wrapper tool for microservice development.
+
+**telepresence 1 is now deprecated becouse no longer supported. you should use latest version https://www.telepresence.io/**
+
+A simple Telepresence 1 wrapper tool for microservice development.
 
 ```
 Usage:
