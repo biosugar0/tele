@@ -42,7 +42,7 @@ jobs:
       # Run Linter against code base #
       ################################
       - name: golangci-lint
-        uses: reviewdog/action-golangci-lint@v1
+        uses: reviewdog/action-golangci-lint@v2
         with:
           tool_name: golangci-lint # Change reporter name.
           golangci_lint_flags: "--config=.github/.golangci.yml"
