@@ -7,6 +7,6 @@ require (
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/spf13/cobra v1.2.1
 	k8s.io/api v0.22.1
-	k8s.io/apimachinery v0.22.1
+	k8s.io/apimachinery v0.22.2
 	k8s.io/client-go v0.22.1
 )
